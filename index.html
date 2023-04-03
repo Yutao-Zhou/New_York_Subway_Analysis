@@ -6,16 +6,27 @@
 -->
 <html>
   <head>
-    <title>Add Map</title>
+    <title>NYC Subway Entry and Exit</title>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
-
-    <link rel="stylesheet" type="text/css" href="./style.css" />
     <script type="module" src="./index.js"></script>
+
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <link rel="stylesheet" type="text/css" href="./style.css" />
   </head>
   <body>
-    <h3>My Google Maps Demo</h3>
+    <h3>NYC Subway Entry and Exit Analysis</h3>
     <!--The div element for the map -->
-    <div id="map"></div>
+    <div class="row">
+      <div class="column left">
+        <div id="piechart"></div>
+        <div id="chart_div"></div>
+        <div id="curve_chart"></div>
+      </div>
+      <div class="column right" id="map"></div>
+    </div>
+
+    <input type="range" min="1" max="100" value="50" class="slider" id="myRange">
+
 
     <!-- prettier-ignore -->
     <script>
