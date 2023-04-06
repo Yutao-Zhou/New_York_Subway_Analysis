@@ -1,17 +1,22 @@
-const stationmap = {
-  "96th St": {
-    center: { lat: 40.78567199998607, lng: -73.9510700015425 },
-    enter: 2714856,
-    exit: 8405837,
-  },
-  "77th St": {
-    center: { lat: 40.77362000074615, lng: -73.95987399886047 },
-    enter: 8405837,
-    exit: 7845870,
-  },
+const stationmap = {};
+
+const size = 10
+// object used to store all circle object
+let allCircle = {}
+
+for ( let i = 0; i < 200; i++) {
+  stationmap["dsfas"+i] = {
+    "station": "77th St",
+    "center": { lat: 40.78567199998607+(Math.random()-0.5)*0.1, lng: -73.9510700015425+(Math.random()-0.5)*0.1 },
+    "enter": Math.random()*100,
+    "exit": Math.random()*100,
+    "date": "03/29/2023",
+    "time": "00:00:00"
+  }
 };
 
-async function initMap() {
+async function initMap(date="03/25/2023", time="00:00:00") {
+  console.log(date, time)
   //Request needed libraries.
   //@ts-ignore
   const { Map } = await google.maps.importLibrary("maps");
@@ -27,32 +32,63 @@ async function initMap() {
   transitLayer.setMap(map);
   // Construct the circle for each value in citymap.
   // Note: We scale the area of the circle based on the population.
-  for (const station in stationmap) {
+  for (const stationID in stationmap) {
     // Add the circle for this station to the map.
-    const enterCircle = new google.maps.Circle({
+    allCircle[stationID] = {'enter': new google.maps.Circle({
       strokeColor: "red",
       strokeOpacity: 0.8,
       strokeWeight: 2,
       fillColor: "red",
       fillOpacity: 0.05,
       map,
-      center: stationmap[station].center,
-      radius: Math.sqrt(stationmap[station].enter) * 0.1,
-    });
-    const exitCircle = new google.maps.Circle({
+      center: stationmap[stationID]["center"],
+      radius: Math.sqrt(stationmap[stationID]["enter"]) * size
+    })}
+    allCircle[stationID]["exit"] = new google.maps.Circle({
       strokeColor: "blue",
       strokeOpacity: 0.8,
       strokeWeight: 2,
       fillColor: "blue",
       fillOpacity: 0.05,
       map,
-      center: stationmap[station].center,
-      radius: Math.sqrt(stationmap[station].exit) * 0.1,
-    });
+      center: stationmap[stationID]["center"],
+      radius: Math.sqrt(stationmap[stationID]["exit"]) * size
+    })
   }
+};
+
+function updateCircle(d, t) {
+  console.log(d, t)
+  for (const stationID in stationmap) {
+    allCircle[stationID]['enter'].setRadius(300+Number(d.slice(3,5))*100);
+    allCircle[stationID]['exit'].setRadius(305+Number(d.slice(3,5))*100);
+  };
 }
 
+
+
+
+const date = ["03/25/2023", "03/26/2023", "03/27/2023", "03/28/2023", "03/29/2023", "03/30/2023", "03/31/2023"]
+const time = ["00:00:00", "04:00:00", "08:00:00", "12:00:00", "16:00:00", "20:00:00"]
+
+
+
 initMap();
+
+const streamButton = document.getElementById('streamButton');
+streamButton.addEventListener('click', function stream() {
+  const initialText = 'Start Streaming';
+  if (streamButton.textContent.toLowerCase().includes(initialText.toLowerCase())) {
+    for (const d in date) {
+      for (const t in time) {
+        updateCircle(date[d], time[t]);
+      }
+    }
+    streamButton.textContent = "Stop Streaming";
+  } else {
+    streamButton.textContent = initialText;
+  }
+});
 
 
 // Pie chart
