@@ -1,5 +1,6 @@
+const date = ["03/25/2023", "03/26/2023", "03/27/2023", "03/28/2023", "03/29/2023", "03/30/2023", "03/31/2023"]
+const time = ["00:00:00", "04:00:00", "08:00:00", "12:00:00", "16:00:00", "20:00:00"]
 const stationmap = {};
-
 const size = 10
 // object used to store all circle object
 let allCircle = {}
@@ -57,38 +58,54 @@ async function initMap(date="03/25/2023", time="00:00:00") {
   }
 };
 
-function updateCircle(d, t) {
-  console.log(d, t)
-  for (const stationID in stationmap) {
-    allCircle[stationID]['enter'].setRadius(300+Number(d.slice(3,5))*100);
-    allCircle[stationID]['exit'].setRadius(305+Number(d.slice(3,5))*100);
-  };
-}
-
-
-
-
-const date = ["03/25/2023", "03/26/2023", "03/27/2023", "03/28/2023", "03/29/2023", "03/30/2023", "03/31/2023"]
-const time = ["00:00:00", "04:00:00", "08:00:00", "12:00:00", "16:00:00", "20:00:00"]
-
-
-
 initMap();
 
 const streamButton = document.getElementById('streamButton');
-streamButton.addEventListener('click', function stream() {
+const timeLineSlider = document.getElementById('timeLineSlider');
+const timelineText = document.getElementById('timelineText');
+
+const sleep = (time) => {
+  return new Promise((resolve) => setTimeout(resolve, time))
+}
+
+function updateCircle(date, time) {
+  console.log(date, time)
+  for (const stationID in stationmap) {
+    allCircle[stationID]['enter'].setRadius(300+(Number(date.slice(3,5))+Number(time.slice(0,2)))*10);
+    allCircle[stationID]['exit'].setRadius(305+(Number(date.slice(3,5))+Number(time.slice(0,2)))*10);
+  };
+}
+
+streamButton.addEventListener('click', async function stream() {
   const initialText = 'Start Streaming';
-  if (streamButton.textContent.toLowerCase().includes(initialText.toLowerCase())) {
-    for (const d in date) {
-      for (const t in time) {
-        updateCircle(date[d], time[t]);
+  const stopText = "Stop Streaming";
+  console.log(streamButton.textContent)
+  if (streamButton.textContent === initialText) {
+    streamButton.textContent = stopText;
+    while (streamButton.textContent === stopText) {
+      let dateSelected = date[Math.floor(timeLineSlider.value / 6)];
+      let timeSelected = time[timeLineSlider.value % 6];
+      updateCircle(dateSelected, timeSelected);
+      if (dateSelected === "03/31/2023" && timeSelected === "20:00:00") {
+        streamButton.textContent = initialText;
+        break
       }
+      await sleep(1000);
+      timeLineSlider.stepUp(1);
+      timelineText.innerHTML = `Time: ${dateSelected} ${timeSelected}`;
     }
-    streamButton.textContent = "Stop Streaming";
   } else {
     streamButton.textContent = initialText;
   }
 });
+
+timeLineSlider.addEventListener('input', function handleSlide() {
+  let dateSelected = date[Math.floor(timeLineSlider.value / 6)];
+  let timeSelected = time[timeLineSlider.value % 6];
+  console.log(dateSelected, timeSelected)
+  updateCircle(dateSelected, timeSelected);
+  timelineText.innerHTML = `Time: ${dateSelected} ${timeSelected}`;
+}, false);
 
 
 // Pie chart
