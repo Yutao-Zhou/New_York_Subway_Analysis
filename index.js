@@ -71,8 +71,8 @@ const sleep = (time) => {
 function updateCircle(date, time) {
   console.log(date, time)
   for (const stationID in stationmap) {
-    allCircle[stationID]['enter'].setRadius(300+(Number(date.slice(3,5))+Number(time.slice(0,2)))*10);
-    allCircle[stationID]['exit'].setRadius(305+(Number(date.slice(3,5))+Number(time.slice(0,2)))*10);
+    allCircle[stationID]['enter'].setRadius(150+(Number(date.slice(3,5))+Number(time.slice(0,2)))*10);
+    allCircle[stationID]['exit'].setRadius(100+(Number(date.slice(3,5))+Number(time.slice(0,2)))*10);
   };
 }
 
@@ -90,7 +90,7 @@ streamButton.addEventListener('click', async function stream() {
         streamButton.textContent = initialText;
         break
       }
-      await sleep(1000);
+      await sleep(100);
       timeLineSlider.stepUp(1);
       timelineText.innerHTML = `Time: ${dateSelected} ${timeSelected}`;
     }
@@ -115,16 +115,23 @@ google.charts.setOnLoadCallback(drawPieChart);
 // Draw the chart and set the chart values
 function drawPieChart() {
   var data = google.visualization.arrayToDataTable([
-  ['Task', 'Hours per Day'],
-  ['Work', 8],
-  ['Eat', 2],
-  ['TV', 4],
-  ['Gym', 2],
-  ['Sleep', 8]
+  ['Day of the Week', 'Throughput'],
+  ['Mondy', 8],
+  ['Tuesday', 2],
+  ['Wednesday', 4],
+  ['Thursday', 2],
+  ['Friday', 8],
+  ['Saturday', 8],
+  ['Sunday', 8],
 ]);
 
   // Optional; add a title and set the width and height of the chart
-  var options = {'title':'My Average Day', 'width':550, 'height':400};
+  var options = {
+    title:'Daily Throughput for Each Day of the Week',
+    width:800,
+    height:400,
+    backgroundColor: { fill:'transparent' }
+  };
 
   // Display the chart inside the <div> element with id="piechart"
   var chart = new google.visualization.PieChart(document.getElementById('piechart'));
@@ -137,24 +144,25 @@ google.charts.setOnLoadCallback(drawStacked);
 
 function drawStacked() {
       var data = google.visualization.arrayToDataTable([
-        ['City', '2010 Population', '2000 Population'],
-        ['New York City, NY', 8175000, 8008000],
-        ['Los Angeles, CA', 3792000, 3694000],
-        ['Chicago, IL', 2695000, 2896000],
-        ['Houston, TX', 2099000, 1953000],
-        ['Philadelphia, PA', 1526000, 1517000]
+        ['Year', 'Entry', 'Exit'],
+        ['2019', 8175000, 8008000],
+        ['2020', 3792000, 3694000],
+        ['2021', 2695000, 2896000],
+        ['2022', 2099000, 1953000],
+        ['2023', 1526000, 1517000]
       ]);
 
       var options = {
-        title: 'Population of Largest U.S. Cities',
+        title: 'Throughput By Year',
+      backgroundColor: { fill:'transparent' },
         chartArea: {width: '50%'},
         isStacked: true,
         hAxis: {
-          title: 'Total Population',
+          title: 'Total Throughput',
           minValue: 0,
         },
         vAxis: {
-          title: 'City'
+          title: 'Year'
         }
       };
       var chart = new google.visualization.BarChart(document.getElementById('chart_div'));
@@ -166,17 +174,26 @@ google.charts.setOnLoadCallback(drawLineChart);
 
 function drawLineChart() {
   var data = google.visualization.arrayToDataTable([
-    ['Year', 'Sales', 'Expenses'],
-    ['2004',  1000,      400],
-    ['2005',  1170,      460],
-    ['2006',  660,       1120],
-    ['2007',  1030,      540]
+    ['Hour', 'Entry', 'Exit', 'Total'],
+    ['00',  1000,      400, 2000],
+    ['04',  1170,      460, 2000],
+    ['08',  660,       1120,  2000],
+    ['12',  1030,      540, 2000],
+    ['16',  1030,      540, 2000],
+    ['20',  1030,      540, 2000]
   ]);
 
   var options = {
-    title: 'Company Performance',
+    title: 'Throughput at Different Times',
     curveType: 'function',
-    legend: { position: 'bottom' }
+    legend: { position: 'bottom' },
+    backgroundColor: { fill:'transparent' },
+    hAxis: {
+      title: 'Perioud Throughput',
+    },
+    vAxis: {
+      title: 'Person-times'
+    }
   };
 
   var chart = new google.visualization.LineChart(document.getElementById('curve_chart'));

@@ -11,6 +11,29 @@ html{
   height: 100vh;
   margin: 0;
   padding: 0;
+  overflow-y: hidden;
+  overflow-x: hidden;
+}
+
+.base{
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.5),rgba(255, 255, 255, 0.5));
+  align-items: center;
+  width: 100vw;
+}
+
+.background-video { 
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  z-index: -1;
+}
+
+.content {
+  padding: 10px;
 }
 /* Create two unequal columns that floats next to each other */
 .column {
@@ -21,6 +44,7 @@ html{
 
 .left {
   width: 25%;
+  background-color: rgba(255, 255, 255, 0.8);
 }
 
 .right {
@@ -32,4 +56,8 @@ html{
   right: 5px;
   bottom: 10px;
   width: 74.7vw;
+}
+
+.timelineText {
+  color: rgb(0, 0, 0);
 }
