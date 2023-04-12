@@ -128,8 +128,6 @@ function drawPieChart() {
   // Optional; add a title and set the width and height of the chart
   var options = {
     title:'Daily Throughput for Each Day of the Week',
-    width:800,
-    height:400,
     backgroundColor: { fill:'transparent' }
   };
 
