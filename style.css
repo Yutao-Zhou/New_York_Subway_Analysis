@@ -11,15 +11,13 @@ html{
   height: 100vh;
   margin: 0;
   padding: 0;
-  overflow-y: hidden;
-  overflow-x: hidden;
 }
 
 .base{
   position: absolute;
   right: 0;
   bottom: 0;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.5),rgba(255, 255, 255, 0.5));
+  background-image: linear-gradient(rgba(255, 255, 255, 0.5),rgba(255, 255, 255, 0));
   align-items: center;
   width: 100vw;
 }
@@ -40,6 +38,7 @@ html{
   float: left;
   height: 90vh;
   width: 100vw;
+  overflow: auto;
 }
 
 .left {
@@ -60,4 +59,17 @@ html{
 
 .timelineText {
   color: rgb(0, 0, 0);
+}
+
+td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.ranking_table {
+  padding-left: 10px;
+}
+
+.timelineText {
+  background-color: rgba(255, 255, 255, 0.5);
 }

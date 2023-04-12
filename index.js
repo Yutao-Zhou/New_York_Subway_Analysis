@@ -1,22 +1,22 @@
-const date = ["03/25/2023", "03/26/2023", "03/27/2023", "03/28/2023", "03/29/2023", "03/30/2023", "03/31/2023"]
+const date = ["03-25-2023", "03-26-2023", "03-27-2023", "03-28-2023", "03-29-2023", "03-30-2023", "03-31-2023"]
 const time = ["00:00:00", "04:00:00", "08:00:00", "12:00:00", "16:00:00", "20:00:00"]
-const stationmap = {};
-const size = 10
+const stataionData = {};
+const size = 10;
 // object used to store all circle object
-let allCircle = {}
+let allCircle = {};
 
 for ( let i = 0; i < 200; i++) {
-  stationmap["dsfas"+i] = {
-    "station": "77th St",
+  stataionData["dsfas"+i] = {
+    "station": `${i}th St`,
     "center": { lat: 40.78567199998607+(Math.random()-0.5)*0.1, lng: -73.9510700015425+(Math.random()-0.5)*0.1 },
-    "enter": Math.random()*100,
-    "exit": Math.random()*100,
-    "date": "03/29/2023",
+    "enter": Math.round(Math.random()*100),
+    "exit": Math.round(Math.random()*100),
+    "date": "03-29-2023",
     "time": "00:00:00"
   }
 };
 
-async function initMap(date="03/25/2023", time="00:00:00") {
+async function initMap(date="03-25-2023", time="04:00:00") {
   console.log(date, time)
   //Request needed libraries.
   //@ts-ignore
@@ -33,32 +33,38 @@ async function initMap(date="03/25/2023", time="00:00:00") {
   transitLayer.setMap(map);
   // Construct the circle for each value in citymap.
   // Note: We scale the area of the circle based on the population.
-  for (const stationID in stationmap) {
+  for (const stationID in stataionData) {
     // Add the circle for this station to the map.
-    allCircle[stationID] = {'enter': new google.maps.Circle({
-      strokeColor: "red",
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: "red",
-      fillOpacity: 0.05,
-      map,
-      center: stationmap[stationID]["center"],
-      radius: Math.sqrt(stationmap[stationID]["enter"]) * size
-    })}
-    allCircle[stationID]["exit"] = new google.maps.Circle({
-      strokeColor: "blue",
-      strokeOpacity: 0.8,
-      strokeWeight: 2,
-      fillColor: "blue",
-      fillOpacity: 0.05,
-      map,
-      center: stationmap[stationID]["center"],
-      radius: Math.sqrt(stationmap[stationID]["exit"]) * size
-    })
+    allCircle[stationID] = {
+      'enter': new google.maps.Circle({
+        strokeColor: "red",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: "red",
+        fillOpacity: 0.05,
+        map,
+        center: stataionData[stationID]["center"],
+        radius: Math.sqrt(stataionData[stationID]["enter"]) * size
+        }), 
+      "exit" : new google.maps.Circle({
+        strokeColor: "blue",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: "blue",
+        fillOpacity: 0.05,
+        map,
+        center: stataionData[stationID]["center"],
+        radius: Math.sqrt(stataionData[stationID]["exit"]) * size
+        })
+    };
   }
 };
 
 initMap();
+createTable(stataionData);
+console.log(allCircle)
+
+
 
 const streamButton = document.getElementById('streamButton');
 const timeLineSlider = document.getElementById('timeLineSlider');
@@ -68,12 +74,53 @@ const sleep = (time) => {
   return new Promise((resolve) => setTimeout(resolve, time))
 }
 
-function updateCircle(date, time) {
-  console.log(date, time)
-  for (const stationID in stationmap) {
-    allCircle[stationID]['enter'].setRadius(150+(Number(date.slice(3,5))+Number(time.slice(0,2)))*10);
-    allCircle[stationID]['exit'].setRadius(100+(Number(date.slice(3,5))+Number(time.slice(0,2)))*10);
+function get_throughput(date, time) {
+  const url = `/data/${date}/${time}`;
+  fetch(url)
+      .then(response => response.json())
+      .then(data => {
+          console.log(data);
+          jsonBox.textContent = JSON.stringify(data, null, 2);
+          })
+      .catch(error => console.error(error));
+}
+
+function updateCircle(stataionData) {
+  for (let stationID in stataionData) {
+    allCircle[stationID]['enter'].setRadius(150+Math.random()*10);
+    allCircle[stationID]['exit'].setRadius(100+(Math.random()*10));
   };
+}
+
+function appendRow(table, rank, stationName, enter, exit) {
+  let row = table.insertRow(-1);
+  let rnk = row.insertCell(0);
+  let station = row.insertCell(1);
+  let throughput = row.insertCell(2);
+  let enterNum = row.insertCell(3);
+  let exitNum = row.insertCell(4);
+  rnk.innerHTML = `${rank}`;
+  station.innerHTML = `${stationName}`;
+  throughput.innerHTML = `${enter + exit}`;
+  enterNum.innerHTML = `${enter}`;
+  exitNum.innerHTML = `${exit}`;
+}
+
+function createTable(stataionData) {
+  const table = document.getElementById('ranking_table');
+  for (let i = 1; i < 11; i++) {
+    let currentStation = Object.values(stataionData)[i - 1];
+    appendRow(table, i, currentStation["station"], currentStation["enter"], currentStation["exit"]);
+  }
+}
+
+function updateTable(stataionData) {
+  const table = document.getElementById('ranking_table');
+  for (let i = 1; i < 11; i++) {
+    let currentStation = Object.values(stataionData)[i - 1];
+    appendRow(table, i, `updated${currentStation["station"]}`, currentStation["enter"], currentStation["exit"]);
+    table.deleteRow(1);
+  }
 }
 
 streamButton.addEventListener('click', async function stream() {
@@ -85,8 +132,10 @@ streamButton.addEventListener('click', async function stream() {
     while (streamButton.textContent === stopText) {
       let dateSelected = date[Math.floor(timeLineSlider.value / 6)];
       let timeSelected = time[timeLineSlider.value % 6];
-      updateCircle(dateSelected, timeSelected);
-      if (dateSelected === "03/31/2023" && timeSelected === "20:00:00") {
+      // stataionData = get_throughput(dateSelected, timeSelected);
+      updateCircle(stataionData);
+      updateTable(stataionData);
+      if (dateSelected === "03-31-2023" && timeSelected === "20:00:00") {
         streamButton.textContent = initialText;
         break
       }
@@ -103,7 +152,9 @@ timeLineSlider.addEventListener('input', function handleSlide() {
   let dateSelected = date[Math.floor(timeLineSlider.value / 6)];
   let timeSelected = time[timeLineSlider.value % 6];
   console.log(dateSelected, timeSelected)
-  updateCircle(dateSelected, timeSelected);
+  // stataionData = get_throughput(dateSelected, timeSelected);
+  updateCircle(stataionData);
+  updateTable(stataionData);
   timelineText.innerHTML = `Time: ${dateSelected} ${timeSelected}`;
 }, false);
 
