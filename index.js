@@ -69,7 +69,7 @@ const sleep = (time) => {
 }
 
 async function get_throughput(date, time) {
-  const url = `http://54.176.117.141:5000/data/${date}/${time}`;
+  const url = `http://127.0.0.1:5000/data/${date}/${time}`;
   try {
     const response = await fetch(url);
     const data = await response.json();
@@ -80,7 +80,7 @@ async function get_throughput(date, time) {
 }
 
 async function get_top10(date, time) {
-  const url = `http://54.176.117.141:5000/top10/${date}/${time}`;
+  const url = `http://127.0.0.1:5000/top10/${date}/${time}`;
   try {
     const response = await fetch(url);
     const data = await response.json();
