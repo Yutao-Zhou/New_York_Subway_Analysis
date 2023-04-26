@@ -1,30 +1,18 @@
+"use strict";
 const date = ["03-25-2023", "03-26-2023", "03-27-2023", "03-28-2023", "03-29-2023", "03-30-2023", "03-31-2023"]
 const time = ["00:00:00", "04:00:00", "08:00:00", "12:00:00", "16:00:00", "20:00:00"]
-const stataionData = {};
-const size = 10;
+const size = 30;
 // object used to store all circle object
-let allCircle = {};
+var allCircle = {};
 
-for ( let i = 0; i < 200; i++) {
-  stataionData["dsfas"+i] = {
-    "station": `${i}th St`,
-    "center": { lat: 40.78567199998607+(Math.random()-0.5)*0.1, lng: -73.9510700015425+(Math.random()-0.5)*0.1 },
-    "enter": Math.round(Math.random()*100),
-    "exit": Math.round(Math.random()*100),
-    "date": "03-29-2023",
-    "time": "00:00:00"
-  }
-};
-
-async function initMap(date="03-25-2023", time="04:00:00") {
-  console.log(date, time)
+async function initMap(stataionData) {
   //Request needed libraries.
   //@ts-ignore
   const { Map } = await google.maps.importLibrary("maps");
   const { AdvancedMarkerView } = await google.maps.importLibrary("marker");
   // Create the map.
   const map = new google.maps.Map(document.getElementById("map"), {
-    zoom: 13,
+    zoom: 12.7,
     center: { lat: 40.75, lng: -73.95 },
     mapTypeId: "roadmap",
   });
@@ -33,20 +21,10 @@ async function initMap(date="03-25-2023", time="04:00:00") {
   transitLayer.setMap(map);
   // Construct the circle for each value in citymap.
   // Note: We scale the area of the circle based on the population.
-  for (const stationID in stataionData) {
+  for (let stationID in stataionData) {
     // Add the circle for this station to the map.
     allCircle[stationID] = {
       'enter': new google.maps.Circle({
-        strokeColor: "red",
-        strokeOpacity: 0.8,
-        strokeWeight: 2,
-        fillColor: "red",
-        fillOpacity: 0.05,
-        map,
-        center: stataionData[stationID]["center"],
-        radius: Math.sqrt(stataionData[stationID]["enter"]) * size
-        }), 
-      "exit" : new google.maps.Circle({
         strokeColor: "blue",
         strokeOpacity: 0.8,
         strokeWeight: 2,
@@ -54,17 +32,33 @@ async function initMap(date="03-25-2023", time="04:00:00") {
         fillOpacity: 0.05,
         map,
         center: stataionData[stationID]["center"],
-        radius: Math.sqrt(stataionData[stationID]["exit"]) * size
+        radius: (stataionData[stationID]['enter'] > 0) ? Math.log(stataionData[stationID]['enter']) * size : 0
+        }), 
+      "exit" : new google.maps.Circle({
+        strokeColor: "red",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: "red",
+        fillOpacity: 0.05,
+        map,
+        center: stataionData[stationID]["center"],
+        radius: (stataionData[stationID]['exit'] > 0) ? Math.log(stataionData[stationID]['exit']) * size : 0
         })
     };
   }
 };
 
-initMap();
-createTable(stataionData);
-console.log(allCircle)
+get_throughput("03-25-2023", "04:00:00").then(
+  function(value) { 
+  initMap(value);
+}
+);
 
-
+get_top10("03-25-2023", "04:00:00").then(
+  function(value) { 
+  createTable(value); 
+}
+);
 
 const streamButton = document.getElementById('streamButton');
 const timeLineSlider = document.getElementById('timeLineSlider');
@@ -74,21 +68,44 @@ const sleep = (time) => {
   return new Promise((resolve) => setTimeout(resolve, time))
 }
 
-function get_throughput(date, time) {
-  const url = `/data/${date}/${time}`;
-  fetch(url)
-      .then(response => response.json())
-      .then(data => {
-          console.log(data);
-          jsonBox.textContent = JSON.stringify(data, null, 2);
-          })
-      .catch(error => console.error(error));
+async function get_throughput(date, time) {
+  const url = `http://127.0.0.1:5000/data/${date}/${time}`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function get_top10(date, time) {
+  const url = `http://127.0.0.1:5000/top10/${date}/${time}`;
+  try {
+    const response = await fetch(url);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 function updateCircle(stataionData) {
   for (let stationID in stataionData) {
-    allCircle[stationID]['enter'].setRadius(150+Math.random()*10);
-    allCircle[stationID]['exit'].setRadius(100+(Math.random()*10));
+    if(allCircle[stationID] !== undefined){
+      let processedEnter = 0;
+      let processedExit = 0;
+      if( stataionData[stationID]['enter'] > 0 ) {
+        processedEnter = Math.log(stataionData[stationID]['enter']) * size
+      }
+      if( stataionData[stationID]['exit'] > 0 ) {
+        processedExit = Math.log(stataionData[stationID]['exit']) * size
+      }
+      allCircle[stationID]['enter'].setRadius(processedEnter);
+      allCircle[stationID]['exit'].setRadius(processedExit);
+    } else {
+      console.log("Station ID Not found: ", stationID)
+    }
   };
 }
 
@@ -106,35 +123,66 @@ function appendRow(table, rank, stationName, enter, exit) {
   exitNum.innerHTML = `${exit}`;
 }
 
-function createTable(stataionData) {
-  const table = document.getElementById('ranking_table');
-  for (let i = 1; i < 11; i++) {
-    let currentStation = Object.values(stataionData)[i - 1];
-    appendRow(table, i, currentStation["station"], currentStation["enter"], currentStation["exit"]);
+function sortTable() {
+  var table, rows, switching, i, x, y, shouldSwitch;
+  table = document.getElementById("ranking_table");
+  switching = true;
+  while (switching) {
+    switching = false;
+    rows = table.rows;
+    for (i = 1; i < (rows.length - 1); i++) {
+      shouldSwitch = false;
+      x = rows[i].getElementsByTagName("TD")[0];
+      y = rows[i + 1].getElementsByTagName("TD")[0];
+      if (Number(x.innerHTML) > Number(y.innerHTML)) {
+        //if so, mark as a switch and break the loop:
+        shouldSwitch = true;
+        break;
+      }
+    }
+    if (shouldSwitch) {
+      rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+      switching = true;
+    }
   }
 }
 
-function updateTable(stataionData) {
+function createTable(top10) {
   const table = document.getElementById('ranking_table');
-  for (let i = 1; i < 11; i++) {
-    let currentStation = Object.values(stataionData)[i - 1];
-    appendRow(table, i, `updated${currentStation["station"]}`, currentStation["enter"], currentStation["exit"]);
+  for (let i = 0; i < 10; i++) {
+    let currentStation = Object.values(top10)[i];
+    appendRow(table, currentStation["rank"], currentStation["station"], currentStation["enter"], currentStation["exit"]);
+  }
+  sortTable()
+}
+
+function updateTable(top10) {
+  const table = document.getElementById('ranking_table');
+  for (let i = 0; i < 10; i++) {
+    let currentStation = Object.values(top10)[i];
+    appendRow(table, currentStation["rank"], currentStation["station"], currentStation["enter"], currentStation["exit"]);
     table.deleteRow(1);
   }
+  sortTable()
 }
 
 streamButton.addEventListener('click', async function stream() {
   const initialText = 'Start Streaming';
   const stopText = "Stop Streaming";
-  console.log(streamButton.textContent)
   if (streamButton.textContent === initialText) {
     streamButton.textContent = stopText;
     while (streamButton.textContent === stopText) {
       let dateSelected = date[Math.floor(timeLineSlider.value / 6)];
       let timeSelected = time[timeLineSlider.value % 6];
-      // stataionData = get_throughput(dateSelected, timeSelected);
-      updateCircle(stataionData);
-      updateTable(stataionData);
+      get_throughput(dateSelected, timeSelected).then(
+        function(value) {
+          updateCircle(value);}
+      );
+      get_top10(dateSelected, timeSelected).then(
+        function(value) { 
+          updateTable(value);
+      }
+      );
       if (dateSelected === "03-31-2023" && timeSelected === "20:00:00") {
         streamButton.textContent = initialText;
         break
@@ -148,13 +196,18 @@ streamButton.addEventListener('click', async function stream() {
   }
 });
 
-timeLineSlider.addEventListener('input', function handleSlide() {
+timeLineSlider.addEventListener('input',async function handleSlide() {
   let dateSelected = date[Math.floor(timeLineSlider.value / 6)];
   let timeSelected = time[timeLineSlider.value % 6];
-  console.log(dateSelected, timeSelected)
-  // stataionData = get_throughput(dateSelected, timeSelected);
-  updateCircle(stataionData);
-  updateTable(stataionData);
+  get_throughput(dateSelected, timeSelected).then(
+    function(value) {
+      updateCircle(value);}
+  );
+  get_top10(dateSelected, timeSelected).then(
+    function(value) { 
+      updateTable(value);
+  }
+  );
   timelineText.innerHTML = `Time: ${dateSelected} ${timeSelected}`;
 }, false);
 
@@ -167,19 +220,20 @@ google.charts.setOnLoadCallback(drawPieChart);
 function drawPieChart() {
   var data = google.visualization.arrayToDataTable([
   ['Day of the Week', 'Throughput'],
-  ['Mondy', 8],
-  ['Tuesday', 2],
-  ['Wednesday', 4],
-  ['Thursday', 2],
-  ['Friday', 8],
-  ['Saturday', 8],
-  ['Sunday', 8],
+  ['Sunday', 1466995],
+  ['Mondy', 2391266],
+  ['Tuesday', 2640607],
+  ['Wednesday', 2732913],
+  ['Thursday', 2721853],
+  ['Friday', 2559018],
+  ['Saturday', 1369484],
 ]);
 
   // Optional; add a title and set the width and height of the chart
   var options = {
     title:'Daily Throughput for Each Day of the Week',
-    backgroundColor: { fill:'transparent' }
+    backgroundColor: { fill:'transparent' },
+    is3D: true,
   };
 
   // Display the chart inside the <div> element with id="piechart"
@@ -187,49 +241,19 @@ function drawPieChart() {
   chart.draw(data, options);
 }
 
-// Bar chart
-google.charts.load('current', {packages: ['corechart', 'bar']});
-google.charts.setOnLoadCallback(drawStacked);
-
-function drawStacked() {
-      var data = google.visualization.arrayToDataTable([
-        ['Year', 'Entry', 'Exit'],
-        ['2019', 8175000, 8008000],
-        ['2020', 3792000, 3694000],
-        ['2021', 2695000, 2896000],
-        ['2022', 2099000, 1953000],
-        ['2023', 1526000, 1517000]
-      ]);
-
-      var options = {
-        title: 'Throughput By Year',
-      backgroundColor: { fill:'transparent' },
-        chartArea: {width: '50%'},
-        isStacked: true,
-        hAxis: {
-          title: 'Total Throughput',
-          minValue: 0,
-        },
-        vAxis: {
-          title: 'Year'
-        }
-      };
-      var chart = new google.visualization.BarChart(document.getElementById('chart_div'));
-      chart.draw(data, options);
-    }
 // Curve line
 google.charts.load('current', {'packages':['corechart']});
 google.charts.setOnLoadCallback(drawLineChart);
 
 function drawLineChart() {
   var data = google.visualization.arrayToDataTable([
-    ['Hour', 'Entry', 'Exit', 'Total'],
-    ['00',  1000,      400, 2000],
-    ['04',  1170,      460, 2000],
-    ['08',  660,       1120,  2000],
-    ['12',  1030,      540, 2000],
-    ['16',  1030,      540, 2000],
-    ['20',  1030,      540, 2000]
+    ['Time', 'Entry', 'Exit', 'Total'],
+    ['00:00:00',  492810,  759979,  1252789],
+    ['04:00:00',  90638,   180329,  270967],
+    ['08:00:00',  548907,  1452896, 2001803],
+    ['12:00:00',  969122,  2851702, 3820824],
+    ['16:00:00',  1551468, 2406150, 3957618],
+    ['20:00:00',  1888756, 2689379, 4578135]
   ]);
 
   var options = {
@@ -238,10 +262,10 @@ function drawLineChart() {
     legend: { position: 'bottom' },
     backgroundColor: { fill:'transparent' },
     hAxis: {
-      title: 'Perioud Throughput',
+      title: 'Time',
     },
     vAxis: {
-      title: 'Person-times'
+      title: 'Throughput'
     }
   };
 
